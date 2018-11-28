@@ -7,8 +7,6 @@ from threading import *
 #Define sizes in terms of bytes
 header_size=4
 packet_size=46
-router1_IP=''
-router2_IP=''
 offset=0
 
 def getFraction(binary_repr):

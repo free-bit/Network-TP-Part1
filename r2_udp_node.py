@@ -7,17 +7,10 @@ header_size=4
 packet_size=46
 
 def main(argv):
-  router_addr_for_B = ('', int(argv[0]))#5010-5012
-  router_addr_for_d = ('', int(argv[1]))#5011-5013
+  router_addr_for_B = ('', 5010)
+  router_addr_for_d = ('', 5011)
 
-  D_PORT = int(argv[2])#5000 or 5001
-  D_ADDR_LIST = [('10.10.3.2', D_PORT),\
-                 ('10.10.5.2', D_PORT)]
-  # B_PORT = 5005
-  # B_ADDR_LIST = [('10.10.1.2',B_PORT),\
-  #                ('10.10.2.1',B_PORT),\
-  #                ('10.10.4.1',B_PORT)]
-
+  d_addr=('10.10.5.2',5001)#link-4
   #Create two UDP sockets one for B one for d
   B_sock=socket(AF_INET, SOCK_DGRAM)
   B_sock.bind(router_addr_for_B)
@@ -30,12 +23,12 @@ def main(argv):
   try:
     while True:
       #Wait a message from B
-      print("Waiting for a message from B...")
+      print("Waiting for a message from B on port number: {}...".format(5010))
       message_from_B, B_addr = B_sock.recvfrom(packet_size)
       #Forward the message to the destination d
-      d_sock.sendto(message_from_B, ('', D_PORT))#TODO: tuple
+      d_sock.sendto(message_from_B, d_addr)
       #Wait until getting a response from d
-      print("Packet was forwarded to d.\n Waiting for a response from d...")
+      print("Packet was forwarded to d.\n Waiting for a response from d on port number: {}...".format(5001))
       response_from_d=''
       response_from_d, d_addr = d_sock.recvfrom(packet_size)
       print("Response was forwarded to B.")
@@ -47,7 +40,4 @@ def main(argv):
       d_sock.close()
 
 if __name__ == "__main__":
-    if(len(sys.argv)<2):
-      print("Expected the port number for destination")
-      sys.exit()
     main(sys.argv[1:])

@@ -90,8 +90,8 @@ def parseResponse(res):
 def main(argv):
   #Create a TCP/IP socket
   sock = socket(AF_INET, SOCK_STREAM)
-  #Connect the socket to the port where the server is listening
-  server_address = ('', 10000)
+  #Connect the socket to the port where the B is listening
+  server_address = ('10.10.1.2', 10000)#link-0
   print('Connecting to {} port {}'.format(*server_address))
   sock.connect(server_address)
   #Find offset of self clock wrt NTP

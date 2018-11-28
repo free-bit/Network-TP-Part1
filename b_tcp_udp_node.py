@@ -45,14 +45,14 @@ def main(argv):
     #Bind the socket to the port
     #Define IP & port number of the server
     UDP_IP = ''
-    UDP_MAIN_PORT = 10000
+    UDP_MAIN_PORT = 10000 #s will send packets to this port
     UDP_PORT1 = 10001 #r1 will send packets to this port
     UDP_PORT2 = 10002 #r2 will send packets to this port
     main_serv_addr = (UDP_IP, UDP_MAIN_PORT)
     serv_addr1 = (UDP_IP, UDP_PORT1)
     serv_addr2 = (UDP_IP, UDP_PORT2)
-    router_addr1 = ('', 5010)#TODO:
-    router_addr2 = ('', 5012)#TODO:
+    router_addr1 = ('10.10.2.2', 5010)#link-1 (r1)
+    router_addr2 = ('10.10.4.2', 5010)#link-3 (r2)
     print('Starting TCP server on {} port {}'.format(*main_serv_addr))
     sock.bind(main_serv_addr)
     sock.listen(1)
