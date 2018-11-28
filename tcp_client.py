@@ -1,4 +1,5 @@
 import sys
+import struct
 from time import *
 from socket import *
 
@@ -7,7 +8,76 @@ read_n_bytes=42
 header_size=4
 packet_size=46
 
+def getFraction(binary_repr):
+  fraction=0.0
+  ctr=1
+  for bit in binary_repr:
+    if(bit=="1"):
+     fraction+=1/2**ctr
+    ctr+=1
+  return fraction
 
+def getNTPTime(host = "pool.ntp.org"):
+    port = 123
+    buf = 1024
+    host_address = (host,port)
+
+    #Subtract 70 years of difference
+    diff = 2208988800
+
+    #Connect to ntp server
+    client=socket(AF_INET, SOCK_DGRAM)
+    client.settimeout(1)
+    delay=10000
+    offset=0
+    delay_offset_pair=(delay, offset)
+    #Send requests at least getting 8 replies
+    i=0
+    while i<8:
+      req=('\x1b'+47*'\0').encode()
+      client.sendto(req, host_address)
+      #Save current time
+      client_tx=time()
+      #Wait response
+      data=0
+      try:
+        data=client.recv(buf)
+      except timeout:
+        continue
+      #Save current time
+      client_rx=time()
+      #Parse response
+      response=struct.unpack('!12I', data)
+      #Calculate receive timestamp
+      decimal = response[8]-diff
+      binary_repr=format(response[9],"b")
+      binary_repr="0"*(32-len(binary_repr))+binary_repr
+      fraction = getFraction(binary_repr)
+      server_rx=decimal+fraction
+      #Calculate transmit timestamp
+      decimal = response[10]-diff
+      binary_repr=format(response[11],"b")
+      binary_repr="0"*(32-len(binary_repr))+binary_repr
+      fraction = getFraction(binary_repr)
+      server_tx=decimal+fraction
+      #Bytes corrupted, discard
+      if(server_rx>=server_tx):
+        continue
+      #Calculate:
+      #The delay between the client and the server
+      #The offset of the client clock from the server clock
+      #NTP uses the minimum of the last eight delay measurements. 
+      #The selected offset is one measured at the lowest delay.
+      delay=(client_rx-client_tx)-(server_tx-server_rx)
+      if(delay<delay_offset_pair[0]):
+        offset=(server_rx-client_tx+server_tx-client_rx)/2
+        delay_offset_pair=(delay, offset)
+      i+=1
+    #if all packets fail, restart
+    if(not offset):
+      getNTPTime()
+    return offset
+    client.close()
 
 def parseResponse(res):
   packet_index=int(res[:header_size])
@@ -18,13 +88,16 @@ def parseResponse(res):
   return (packet_index, router_name, time)
 
 def main(argv):
-  # Create a TCP/IP socket
+  #Create a TCP/IP socket
   sock = socket(AF_INET, SOCK_STREAM)
-  # sock.settimeout(10)
-  # Connect the socket to the port where the server is listening
+  #Connect the socket to the port where the server is listening
   server_address = ('', 10000)
   print('Connecting to {} port {}'.format(*server_address))
   sock.connect(server_address)
+  #Find offset of self clock wrt NTP
+  #Positive offset means NTP is ahead
+  #Negative offset means NTP is behind
+  offset=getNTPTime()
 
   try:
     #Hold sending and arrival times here
@@ -43,7 +116,7 @@ def main(argv):
         packet=four_byte_header+sensor_reading
         sock.sendall(packet)
         print("Packet sent")
-        packet_e2e_delay[packet_index]=time()
+        packet_e2e_delay[packet_index]=time()-offset
         packet_index+=1
         #Wait two responses
         response1=sock.recv(packet_size)
