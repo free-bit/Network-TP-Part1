@@ -115,34 +115,48 @@ def main(argv):
         #Packet of size 46 bytes is formed
         packet=four_byte_header+sensor_reading
         sock.sendall(packet)
+        sending_time=time()+offset
+        packet_e2e_delay[packet_index]=[]
         print("Packet sent")
-        packet_e2e_delay[packet_index]=time()-offset
-        packet_index+=1
         #Wait two responses
         response1=sock.recv(packet_size)
-        print("Response-1 retrieved")
+        # print("Response-1 retrieved")
         response2=sock.recv(packet_size)
-        print("Response-2 retrieved")
+        # print("Response-2 retrieved")
         #Trying to parse two responses to the same packet
+        inc_packet_index1=-1
+        inc_packet_index2=-1
+        arrival_time1=-1
+        arrival_time2=-1
+        router_name1=''
+        router_name2=''
         try:
           inc_packet_index1, router_name1, arrival_time1=parseResponse(response1)
+        except:
+          print("Parsing of the first response failed")
+        try:  
           inc_packet_index2, router_name2, arrival_time2=parseResponse(response2)
-          if(inc_packet_index1!=inc_packet_index2):
-            raise Exception
-          sending_time=packet_e2e_delay[inc_packet_index1]
-          packet_e2e_delay[inc_packet_index1]=[(arrival_time1-sending_time, router_name1),\
-                                               (arrival_time2-sending_time, router_name2)]
-        #Parsing failed
-        except Exception as e:
-          print(e)
-          pass
+        except:
+          print("Parsing of the second response failed")
+        #If there is no obvious corruption in the packets store results
+        if(inc_packet_index1==packet_index and arrival_time1!=-1 and (router_name1=='r1' or router_name1=='r2')):
+          packet_e2e_delay[packet_index].append((arrival_time1-sending_time, router_name1))
+        if(inc_packet_index2==packet_index and arrival_time2!=-1 and (router_name2=='r1' or router_name2=='r2')):
+          packet_e2e_delay[packet_index].append((arrival_time2-sending_time, router_name2))
+        packet_index+=1
   finally:
       if(len(argv)==1):
         stat = open("r1_"+argv[0],'w')
         stat2 = open("r2_"+argv[0],'w')
         for key, value in packet_e2e_delay.items():
-          stat.write(str(value[0][0])+"\n")
-          stat2.write(str(value[1][0])+"\n")
+          if(value[0][1]=='r1'):
+            stat.write(str(value[0][0])+"\n")
+          else:
+            stat2.write(str(value[0][0])+"\n")
+          if(value[1][1]=='r2'):
+            stat2.write(str(value[1][0])+"\n")
+          else:
+            stat.write(str(value[1][0])+"\n")
         stat.close()
         stat2.close()
       # print(packet_e2e_delay)

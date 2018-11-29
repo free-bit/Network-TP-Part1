@@ -96,10 +96,12 @@ def sock_listener(i, serv_addr):
         router_name='r1'
       else:
         router_name='r2'
-      print('Thread-{} has received packet-{} from router:{}-{}/{}'.format(i, packet_index, router_name, *address))
-      payload=bytearray("ACK Via:{} At:{}".format(router_name, time()-offset).encode('ascii'))
+      # print('Thread-{} has received packet-{} from router:{}-{}/{}'.format(i, packet_index, router_name, *address))
+      payload=bytearray("ACK Via:{} At:{}".format(router_name, time()+offset).encode('ascii'))
       response=four_byte_header+payload
       sock.sendto(response, address)
+      print('Thread-{} has received packet-{} from router:{}({}/{})'.format(i, packet_index, router_name, *address))
+      print('Response is sent back to router:{}.'.format(router_name))
   finally:
       print('Socket is closed')
       sock.close()

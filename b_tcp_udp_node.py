@@ -22,11 +22,10 @@ def router_handler(i, serv_addr, router_address, queue, condition):
     while True:
       condition.acquire()
       condition.wait()
-      print("Thread-"+str(i)+" sends the packet.")
       packet = queue.get()
       sock.sendto(packet, router_address)
+      print("Thread-"+str(i)+" sent the packet to router.")
       response, address = sock.recvfrom(packet_size)
-      print("Thread-"+str(i)+" got the response.")
       queue.put(response)
       if(i==1):
         processed1=True
@@ -34,6 +33,7 @@ def router_handler(i, serv_addr, router_address, queue, condition):
         processed2=True
       condition.notify()
       condition.release()
+      print("Thread-"+str(i)+" forwarded the response from router to main TCP thread.")
   finally:
       print('Socket is closed')
       sock.close()
@@ -108,10 +108,11 @@ def main(argv):
                     #         response2=q2.get()
                     response1=q1.get()
                     response2=q2.get()
-                    print(response1)
-                    print(packet)
+                    # print(response1)
+                    # print(packet)
                     conn.sendall(response1)
                     conn.sendall(response2)
+                    print("Main thread has sent both responses.")
                 else:
                     print("Connection is over")
                     break

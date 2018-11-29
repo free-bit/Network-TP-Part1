@@ -31,9 +31,9 @@ def main(argv):
       print("Packet was forwarded to d.\n Waiting for a response from d on port number: {}...".format(5000))
       response_from_d=''
       response_from_d, d_addr = d_sock.recvfrom(packet_size)
-      print("Response was forwarded to B.")
       #Forward the response or the error to B
       B_sock.sendto(response_from_d, B_addr)
+      print("Response was forwarded to B.")
   finally:
       print('Sockets are closed')
       B_sock.close()
