@@ -7,6 +7,7 @@ from queue import *
 #Define sizes in terms of bytes
 header_size=4
 packet_size=46
+#Control flags for threads
 processed1=False
 processed2=False
 
@@ -42,7 +43,6 @@ def main(argv):
     #Create a TCP/IP socket
     sock = socket(AF_INET, SOCK_STREAM)
 
-    #Bind the socket to the port
     #Define IP & port number of the server
     UDP_IP = ''
     UDP_MAIN_PORT = 10000 #s will send packets to this port
@@ -54,8 +54,10 @@ def main(argv):
     router_addr1 = ('10.10.2.2', 5010)#link-1 (r1)
     router_addr2 = ('10.10.4.2', 5010)#link-3 (r2)
     print('Starting TCP server on {} port {}'.format(*main_serv_addr))
+    #Bind the socket to the port and start listening (at most one connection)
     sock.bind(main_serv_addr)
     sock.listen(1)
+    #Initialize all variables required
     q1=Queue()
     q2=Queue()
     condition1=Condition(Lock())
@@ -64,19 +66,16 @@ def main(argv):
     t2=Thread(target=router_handler, args=(2, serv_addr2, router_addr2, q2, condition2))
     t1.start()
     t2.start()
+    conn=0
     try:
         while True:
             # Wait for a connection
             print('Waiting for a connection')
             conn, client_address = sock.accept()
             print('Connection from ip:{} on port number:{}'.format(*client_address))
-            #Receive the packet
             while True:
+                #Receive the packet
                 packet, address = conn.recvfrom(packet_size)
-                # four_byte_header=packet[:header_size]
-                # payload=bytearray("ACK Via:{} At:{}".format("r1",time()).encode('ascii'))
-                # packet=four_byte_header+payload
-                # conn.sendall(packet)
                 global processed1
                 global processed2
                 processed1=False
@@ -86,30 +85,23 @@ def main(argv):
                     condition2.acquire()
                     packet_index=int(packet[:header_size])
                     print("Packet number {} is being copied and sent to routers:".format(packet_index))
-                    #Duplicate the packet
+                    #Duplicate the packet and wake threads up
                     q1.put(packet)
                     condition1.notify()
                     condition1.release()
                     q2.put(packet)
                     condition2.notify()
                     condition2.release()
+                    #Until having both responses, wait (non-busy) 
                     while(not processed1 or not processed2):
                         condition1.acquire()
                         condition1.release()
                         condition2.acquire()
-                        condition2.release()    
-                    # if(not processed1):
-                    #     with condition1:
-                    #         condition1.wait()
-                    #         response1=q1.get()
-                    # if(not processed2):
-                    #     with condition2:
-                    #         condition2.wait()
-                    #         response2=q2.get()
+                        condition2.release()
+                    #Collect responses  
                     response1=q1.get()
                     response2=q2.get()
-                    # print(response1)
-                    # print(packet)
+                    #Forward to s
                     conn.sendall(response1)
                     conn.sendall(response2)
                     print("Main thread has sent both responses.\n")
@@ -117,12 +109,13 @@ def main(argv):
                     print("Connection is over")
                     break
     finally:
-        # Close the connection and the socket
-        conn.close()
+        #Close the connection and the socket
+        try:
+            print("Closing the connection...")
+            conn.close()
+        #If no connection established skip
+        except AttributeError:
+            pass
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
-# print(gethostbyname(gethostname()))
-#print(gethostbyname("ceng.metu.edu.tr"))
-# Listen for incoming connections

@@ -7,19 +7,15 @@ header_size=4
 packet_size=46
 
 def main(argv):
-  router_addr_for_B = ('', 5010)
-  router_addr_for_d = ('', 5011)
+  router_addr_for_B = ('', 5010)#Use 5010 for B
+  router_addr_for_d = ('', 5011)#Use 5011 for d
 
   d_addr=('10.10.3.2',5000)#link-2
   #Create two UDP sockets one for B one for d
   B_sock=socket(AF_INET, SOCK_DGRAM)
   B_sock.bind(router_addr_for_B)
-  # B_sock.settimeout(2)
-  b_index=0
   d_sock=socket(AF_INET, SOCK_DGRAM)
   d_sock.bind(router_addr_for_d)
-  # d_sock.settimeout(2)
-  d_index=0 
   try:
     while True:
       #Wait a message from B
@@ -29,9 +25,8 @@ def main(argv):
       d_sock.sendto(message_from_B, d_addr)
       #Wait until getting a response from d
       print("Packet was forwarded to d.\n Waiting for a response from d on port number: {}...".format(5000))
-      response_from_d=''
       response_from_d, d_addr = d_sock.recvfrom(packet_size)
-      #Forward the response or the error to B
+      #Forward the response to B
       B_sock.sendto(response_from_d, B_addr)
       print("Response was forwarded to B.")
   finally:
