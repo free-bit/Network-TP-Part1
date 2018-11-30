@@ -112,7 +112,7 @@ def main(argv):
                     # print(packet)
                     conn.sendall(response1)
                     conn.sendall(response2)
-                    print("Main thread has sent both responses.")
+                    print("Main thread has sent both responses.\n")
                 else:
                     print("Connection is over")
                     break

@@ -88,16 +88,16 @@ def parseResponse(res):
   return (packet_index, router_name, time)
 
 def main(argv):
+  #Find offset of self clock wrt NTP
+  #Positive offset means NTP is ahead
+  #Negative offset means NTP is behind
+  offset=getNTPTime()
   #Create a TCP/IP socket
   sock = socket(AF_INET, SOCK_STREAM)
   #Connect the socket to the port where the B is listening
   server_address = ('10.10.1.2', 10000)#link-0
   print('Connecting to {} port {}'.format(*server_address))
   sock.connect(server_address)
-  #Find offset of self clock wrt NTP
-  #Positive offset means NTP is ahead
-  #Negative offset means NTP is behind
-  offset=getNTPTime()
 
   try:
     #Hold sending and arrival times here
@@ -117,11 +117,11 @@ def main(argv):
         sock.sendall(packet)
         sending_time=time()+offset
         packet_e2e_delay[packet_index]=[]
-        print("Packet sent")
+        print("Packet-{} sent".format(packet_index))
         #Wait two responses
         response1=sock.recv(packet_size)
-        # print("Response-1 retrieved")
         response2=sock.recv(packet_size)
+        print("Responses retrieved")
         # print("Response-2 retrieved")
         #Trying to parse two responses to the same packet
         inc_packet_index1=-1
