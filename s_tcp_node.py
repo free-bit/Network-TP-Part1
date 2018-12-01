@@ -125,8 +125,9 @@ def main(argv):
         four_byte_header=bytearray("{0:04d}".format(packet_index).encode('ascii'))
         #Packet of size 46 bytes is formed, format: [4 byte header][42 byte long line]
         packet=four_byte_header+sensor_reading
-        #Wait 15ms to avoid congestion in actual routers
-        sleep(0.015)
+        #Wait 50ms to avoid congestion in actual routers
+        if(not packet_index%45):
+        	sleep(2)
         #Send packet, calculate transmission time and open a new record
         sock.sendall(packet)
         sending_time=time()+offset

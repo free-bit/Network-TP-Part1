@@ -122,7 +122,7 @@ def main(argv):
   global offset
   if(len(argv)==1):
     offset=float(argv[0])
-    print(offset)
+    # print(offset)
   else:
     offset=getNTPTime()
     with open('ntp_offset.txt','w') as file:
